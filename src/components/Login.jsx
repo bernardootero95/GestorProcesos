@@ -6,21 +6,31 @@ import Alert from './Alert';
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertType, setAlertType] = useState('info');
 
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            alert('Inicio de sesión exitoso');
+            setAlertMessage('Inicio de sesión exitoso. Bienvenido!');
+            setAlertType('success');
+            setShowAlert(true);
             setEmail('');
             setPassword('');
             const modalElement = document.getElementById('loginModal');
             const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
             modalInstance && modalInstance.hide();
         } catch (error) {
-            setError('Error al iniciar sesión: ' + error.message);
+            setAlertMessage('Error al iniciar sesión: ' + error.message);
+            setAlertType('error');
+            setShowAlert(true);
         }
+    };
+
+    const handleCloseAlert = () => {
+        setShowAlert(false);
     };
 
     return (
@@ -49,9 +59,17 @@ const Login = () => {
                         required 
                     />
                 </div>
-                {error && <div className="text-danger">{error}</div>}
+                
                 <button type="submit" className="btn btn-primary">Iniciar Sesión</button>
             </form>
+
+            <Alert
+                show={showAlert}
+                onClose={handleCloseAlert}
+                message={alertMessage}
+                type={alertType}
+                title={alertType === 'success' ? '¡Éxito!' : '¡Error!'}
+            />
         </div>
     );
 };

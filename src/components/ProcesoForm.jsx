@@ -8,6 +8,7 @@ import Controles from './Controles';
 import Notas from './Notas';
 import Actividades from './Actividades';
 import { onAuthStateChanged } from 'firebase/auth';
+import Alert from './Alert';
 
 const ProcesoForm = ({ onLogout }) => {
     const [nombreProceso, setNombreProceso] = useState('');
@@ -21,18 +22,26 @@ const ProcesoForm = ({ onLogout }) => {
     const [procesosCargados, setProcesosCargados] = useState([]);
     const [procesoSeleccionado, setProcesoSeleccionado] = useState(null);
     const [procesoId, setProcesoId] = useState(null); // Estado para el ID del proceso seleccionado
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+
+    const handleShowAlert = () => {
+        setAlertMessage('Este es un mensaje de prueba');
+        setShowAlert(true);
+    };
+
+    const handleCloseAlert = () => {
+        setShowAlert(false);
+    };
 
     useEffect(() => {
         const unsuscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
-                console.log('Usuario autenticado:', user);
                 cargarProcesosDelUsuario(user.uid);
             } else {
-                console.log('No hay usuario autenticado.');
                 setProcesosCargados([]);
             }
         });
-
         return () => unsuscribe();
     }, []);
 
@@ -43,6 +52,7 @@ const ProcesoForm = ({ onLogout }) => {
             const procesos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setProcesosCargados(procesos);
         } catch (error) {
+            <Alert show={showAlert} onClose={handleCloseAlert}/>
             console.error('Error al cargar los procesos desde Firebase:', error);
         }
     };
@@ -163,7 +173,7 @@ const ProcesoForm = ({ onLogout }) => {
 
     const cargarFormulario = (e) => {
         const file = e.target.files[0];
-        if (file) {
+        if (file && file.name.endsWith('.pro')) {
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
@@ -179,11 +189,13 @@ const ProcesoForm = ({ onLogout }) => {
                     setProcesoId(null); // Se asegura de que se trate como un nuevo proceso
                     alert('Formulario cargado exitosamente.');
                 } catch (error) {
-                    console.error('Error al cargar el archivo JSON:', error);
-                    alert('Hubo un error al cargar el archivo JSON.');
+                    console.error('Error al cargar el archivo .pro:', error);
+                    alert('Hubo un error al cargar el archivo .pro.');
                 }
             };
             reader.readAsText(file);
+        } else {
+            alert('Por favor, seleccione un archivo con la extensión .pro.');
         }
     };
 

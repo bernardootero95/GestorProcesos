@@ -38,6 +38,7 @@ const Navbar = ({ onLogout }) => {
                 if (onLogout) {
                     onLogout(); // Llama a la función de limpieza del formulario
                 }
+                window.location.reload();
             })
             .catch((error) => {
                 console.error('Error al cerrar sesión:', error);
