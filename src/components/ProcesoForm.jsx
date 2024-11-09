@@ -114,8 +114,10 @@ const ProcesoForm = ({ onLogout }) => {
     };
 
     const handleNuevoFormulario = () => {
-        if (window.confirm('¿Desea guardar los cambios antes de crear un nuevo formulario?')) {
-            guardarFormularioEnFirestore();
+        if (procesoId) {
+            if (window.confirm('Está editando un proceso. ¿Desea guardar los cambios antes de crear un nuevo formulario?')) {
+                guardarFormularioEnFirestore();
+            }
         }
         limpiarFormulario();
     };
