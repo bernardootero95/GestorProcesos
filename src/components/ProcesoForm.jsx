@@ -122,16 +122,7 @@ const ProcesoForm = ({ onLogout }) => {
         limpiarFormulario();
     };
 
-    useEffect(() => {
-        if (onLogout) {
-            onLogout(() => {
-                if (window.confirm('¿Desea guardar los cambios antes de cerrar sesión?')) {
-                    guardarFormularioEnFirestore();
-                }
-                limpiarFormulario();
-            });
-        }
-    }, [onLogout]);
+   
 
     const cargarProcesoEnFormulario = () => {
         if (procesoSeleccionado) {
