@@ -11,6 +11,7 @@ import Actividades from './Actividades';
 import { onAuthStateChanged } from 'firebase/auth';
 import Alert from './Alert';
 import Preview from './Preview';
+import html2canvas from 'html2canvas';
 
 const ProcesoForm = ({ onLogout }) => {
     const [nombreProceso, setNombreProceso] = useState('');
@@ -38,15 +39,29 @@ const ProcesoForm = ({ onLogout }) => {
         setShowPreview(false);
     };
 
-    const exportarAPDF = () => {
-        const doc = new jsPDF();
-        doc.html(previewRef.current, {
-            callback: function (pdf) {
-                pdf.save(`${nombreProceso.replace(/\s+/g, '_')}_proceso.pdf`);
-            },
-            x: 10,
-            y: 10
-        });
+    const exportarAPDF = async () => {
+        if (previewRef.current) {
+            const canvas = await html2canvas(previewRef.current, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgWidth = 210; // Ancho de la página A4 en mm
+            const pageHeight = 297; // Altura de la página A4 en mm
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save(`${nombreProceso.replace(/\s+/g, '_')}_proceso.pdf`);
+        }
     };
 
     const imprimirPreview = () => {
