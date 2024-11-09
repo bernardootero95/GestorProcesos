@@ -1,0 +1,79 @@
+body {
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.form-container {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+.sortable-container {
+  padding: 10px;
+  border: 1px dashed #6c757d;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  min-height: 50px;
+  background-color: #f8f9fa;
+  cursor: move;
+}
+.sortable-container div {
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  cursor: move;
+}
+.sortable-container div:active {
+  cursor: grabbing;
+}
+.input-group {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.numero {
+  font-weight: bold;
+  margin-right: 10px;
+  width: 30px;
+} 
+.row{
+    width: 100%;
+}
+.tareasContainer{
+    display: block !important;
+}
+@media print {
+  body {
+    background-color: white;
+  }
+ /* Estilo para la vista previa en PDF */
+ #previewContainer {
+  page-break-before: always;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 20px auto;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: white;
+  border: 1px solid #ddd;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+}
