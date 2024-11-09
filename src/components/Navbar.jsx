@@ -1,13 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 const Navbar = ({ onLogout }) => {
     const [user, setUser] = useState(null);
+    const [userName, setUserName] = useState('');
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
+                // Obtener el nombre del usuario desde Firestore
+                try {
+                    const userDoc = await getDoc(doc(db, 'Usuarios', currentUser.uid));
+                    if (userDoc.exists()) {
+                        setUserName(userDoc.data().nombre);
+                    } else {
+                        console.log('No se encontró el documento del usuario.');
+                    }
+                } catch (error) {
+                    console.error('Error al obtener el nombre del usuario:', error);
+                }
+            } else {
+                setUser(null);
+                setUserName('');
+            }
         });
 
         return () => unsubscribe();
@@ -33,9 +51,12 @@ const Navbar = ({ onLogout }) => {
                 <a className="navbar-brand" href="#">Gestión de Procesos</a>
                 <div className="ms-auto">
                     {user ? (
-                        <button className="btn btn-outline-light" onClick={handleLogout}>
-                            Cerrar Sesión
-                        </button>
+                        <div className="d-flex align-items-center">
+                            <span className="text-light me-3">Hola, {userName}</span>
+                            <button className="btn btn-outline-light" onClick={handleLogout}>
+                                Cerrar Sesión
+                            </button>
+                        </div>
                     ) : (
                         <>
                             <button 
