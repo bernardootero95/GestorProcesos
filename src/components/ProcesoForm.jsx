@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef  } from 'react';
 import { db, auth } from '../../firebaseConfig';
 import { doc, collection, getDocs, addDoc, setDoc } from 'firebase/firestore';
+import { jsPDF } from 'jspdf';
 import Resultados from './Resultados';
 import Responsables from './Responsables';
 import Entradas from './Entradas';
@@ -9,6 +10,7 @@ import Notas from './Notas';
 import Actividades from './Actividades';
 import { onAuthStateChanged } from 'firebase/auth';
 import Alert from './Alert';
+import Preview from './Preview';
 
 const ProcesoForm = ({ onLogout }) => {
     const [nombreProceso, setNombreProceso] = useState('');
@@ -24,12 +26,38 @@ const ProcesoForm = ({ onLogout }) => {
     const [procesoId, setProcesoId] = useState(null); // Estado para el ID del proceso seleccionado
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
+    const [alertType, setAlertType] = useState('info');
+    const [showPreview, setShowPreview] = useState(false);
+    const previewRef = useRef();
 
-    const handleShowAlert = () => {
-        setAlertMessage('Este es un mensaje de prueba');
-        setShowAlert(true);
+    const generarVistaPrevia = () => {
+        setShowPreview(true);
     };
 
+    const cerrarVistaPrevia = () => {
+        setShowPreview(false);
+    };
+
+    const exportarAPDF = () => {
+        const doc = new jsPDF();
+        doc.html(previewRef.current, {
+            callback: function (pdf) {
+                pdf.save(`${nombreProceso.replace(/\s+/g, '_')}_proceso.pdf`);
+            },
+            x: 10,
+            y: 10
+        });
+    };
+
+    const imprimirPreview = () => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Vista Previa del Proceso</title></head><body>');
+        printWindow.document.write(previewRef.current.innerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+    };
+    
     const handleCloseAlert = () => {
         setShowAlert(false);
     };
@@ -52,8 +80,9 @@ const ProcesoForm = ({ onLogout }) => {
             const procesos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setProcesosCargados(procesos);
         } catch (error) {
-            <Alert show={showAlert} onClose={handleCloseAlert}/>
-            console.error('Error al cargar los procesos desde Firebase:', error);
+            setAlertMessage('Error al cargar los procesos desde Firebase:', error);
+            setAlertType('error');
+            setShowAlert(true);
         }
     };
 
@@ -100,19 +129,27 @@ const ProcesoForm = ({ onLogout }) => {
                 setControles(proceso.controles || []);
                 setNotas(proceso.notas || []);
                 setProcesoId(proceso.id);
-                alert('Proceso cargado exitosamente.');
+                setAlertMessage('Proceso cargado exitosamente.');
+                setAlertType('success');
+                setShowAlert(true);
             } else {
-                alert('Proceso no encontrado.');
+                setAlertMessage('Proceso no encontrado. ');
+                setAlertType('error');
+                setShowAlert(true);
             }
         } else {
-            alert('Seleccione un proceso de la lista.');
+            setAlertMessage('Seleccione un proceso de la lista.');
+            setAlertType('info');
+            setShowAlert(true);
         }
     };
 
     const guardarFormularioEnFirestore = async () => {
         const user = auth.currentUser;
         if (!user) {
-            alert('Debe iniciar sesión para guardar el formulario.');
+            setAlertMessage('Debe iniciar sesión para guardar el formulario.');
+            setAlertType('info');
+            setShowAlert(true);
             return;
         }
 
@@ -132,18 +169,23 @@ const ProcesoForm = ({ onLogout }) => {
             if (procesoId) {
                 // Actualizar proceso existente
                 await setDoc(doc(db, 'Usuarios', user.uid, 'Procesos', procesoId), formularioData);
-                alert('Formulario actualizado exitosamente en Firestore.');
+                setAlertMessage('Formulario actualizado exitosamente en Firestore.');
+                setAlertType('success');
+                setShowAlert(true);
                 setProcesoId(null); // Volver al estado inicial
             } else {
                 // Crear un nuevo proceso
                 await addDoc(collection(doc(db, 'Usuarios', user.uid), 'Procesos'), formularioData);
-                alert('Formulario guardado exitosamente en Firestore.');
+                setAlertMessage('Formulario guardado exitosamente en Firestore.');
+                setAlertType('success');
+                setShowAlert(true);
             }
             // Recargar la lista de procesos después de guardar/actualizar
             cargarProcesosDelUsuario(user.uid);
         } catch (error) {
-            console.error('Error al guardar el formulario en Firestore:', error);
-            alert('Hubo un error al intentar guardar el formulario.');
+            setAlertMessage('Error al guardar el formulario en Firestore:', error);
+            setAlertType('error');
+            setShowAlert(true);
         }
     };
 
@@ -167,8 +209,9 @@ const ProcesoForm = ({ onLogout }) => {
         link.download = `${nombreProceso.replace(/\s+/g, '_')}_proceso.pro`;
         link.click();
         URL.revokeObjectURL(url);
-
-        alert('Formulario descargado exitosamente.');
+        setAlertMessage('Formulario descargado exitosamente.');
+        setAlertType('success');
+        setShowAlert(true);
     };
 
     const cargarFormulario = (e) => {
@@ -186,16 +229,21 @@ const ProcesoForm = ({ onLogout }) => {
                     setEntradas(jsonData.entradas || []);
                     setControles(jsonData.controles || []);
                     setNotas(jsonData.notas || []);
-                    setProcesoId(null); // Se asegura de que se trate como un nuevo proceso
-                    alert('Formulario cargado exitosamente.');
+                    setProcesoId(null); 
+                    setAlertMessage('Formulario cargado exitosamente.');
+                    setAlertType('success');
+                    setShowAlert(true);
                 } catch (error) {
-                    console.error('Error al cargar el archivo .pro:', error);
-                    alert('Hubo un error al cargar el archivo .pro.');
+                    setAlertMessage('Error al cargar el archivo .pro:', error);
+                    setAlertType('error');
+                    setShowAlert(true);
                 }
             };
             reader.readAsText(file);
         } else {
-            alert('Por favor, seleccione un archivo con la extensión .pro.');
+            setAlertMessage('Por favor, seleccione un archivo con la extensión .pro.');
+            setAlertType('info');
+            setShowAlert(true);
         }
     };
 
@@ -273,9 +321,48 @@ const ProcesoForm = ({ onLogout }) => {
                         <button type="button" className="btn btn-warning" onClick={handleNuevoFormulario}>
                             Nuevo Formulario
                         </button>
+                        <button type="button" className="btn btn-secondary me-2" onClick={generarVistaPrevia}>
+                            Vista Previa del Proceso
+                        </button>
                     </div>
                 </form>
             </div>
+            <Alert
+                show={showAlert}
+                onClose={handleCloseAlert}
+                message={alertMessage}
+                type={alertType}
+                title={alertType === 'success' ? '¡Éxito!' : '¡Error!'}
+            />
+            {showPreview && (
+                <div className="modal show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-lg" role="document">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Vista Previa del Proceso</h5>
+                                <button type="button" className="btn-close" onClick={cerrarVistaPrevia}></button>
+                            </div>
+                            <div className="modal-body" ref={previewRef}>
+                                <Preview
+                                    nombreProceso={nombreProceso}
+                                    proposito={proposito}
+                                    resultados={resultados}
+                                    actividades={actividades}
+                                    responsables={responsables}
+                                    entradas={entradas}
+                                    controles={controles}
+                                    notas={notas}
+                                />
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={cerrarVistaPrevia}>Cerrar</button>
+                                <button type="button" className="btn btn-primary" onClick={exportarAPDF}>Exportar a PDF</button>
+                                <button type="button" className="btn btn-info" onClick={imprimirPreview}>Imprimir</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

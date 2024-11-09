@@ -2,25 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
+import Alert from './Alert';
 
 const Navbar = ({ onLogout }) => {
     const [user, setUser] = useState(null);
     const [userName, setUserName] = useState('');
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertType, setAlertType] = useState('info');
+
+    const handleCloseAlert = () => {
+        setShowAlert(false);
+    };
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                // Obtener el nombre del usuario desde Firestore
                 try {
                     const userDoc = await getDoc(doc(db, 'Usuarios', currentUser.uid));
                     if (userDoc.exists()) {
                         setUserName(userDoc.data().nombre);
                     } else {
-                        console.log('No se encontró el documento del usuario.');
+                        setAlertMessage('No se encontró el documento del usuario.');
+                        setAlertType('error');
+                        setShowAlert(true);
                     }
                 } catch (error) {
-                    console.error('Error al obtener el nombre del usuario:', error);
+                    setAlertMessage('Error al obtener el nombre del usuario:' + error.message);
+                    setAlertType('error');
+                    setShowAlert(true);
                 }
             } else {
                 setUser(null);
@@ -34,19 +45,23 @@ const Navbar = ({ onLogout }) => {
     const handleLogout = () => {
         signOut(auth)
             .then(() => {
-                alert('Sesión cerrada exitosamente');
+                setAlertMessage('Sesión cerrada exitosamente');
+                setAlertType('success');
+                setShowAlert(true);
                 if (onLogout) {
                     onLogout(); // Llama a la función de limpieza del formulario
                 }
                 window.location.reload();
             })
             .catch((error) => {
-                console.error('Error al cerrar sesión:', error);
-                alert('Error al cerrar sesión');
+                setAlertMessage('Error al cerrar sesión:' + error.message);
+                setAlertType('error');
+                setShowAlert(true);
             });
     };
 
     return (
+        <>
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
             <div className="container-fluid">
                 <a className="navbar-brand" href="#">Gestión de Procesos</a>
@@ -79,6 +94,14 @@ const Navbar = ({ onLogout }) => {
                 </div>
             </div>
         </nav>
+        <Alert
+                show={showAlert}
+                onClose={handleCloseAlert}
+                message={alertMessage}
+                type={alertType}
+                title={alertType === 'success' ? '¡Éxito!' : '¡Error!'}
+            />
+        </>
     );
 };
 

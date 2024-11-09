@@ -2,18 +2,22 @@ import React, { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
+import Alert from './Alert';
 
 const Register = ({ onRegisterSuccess }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertType, setAlertType] = useState('info');
+
+    const handleCloseAlert = () => {
+        setShowAlert(false);
+    };
 
     const handleRegister = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
         try {
             // Crear usuario en Firebase Authentication
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -24,8 +28,9 @@ const Register = ({ onRegisterSuccess }) => {
                 UID: user.uid,
                 nombre: name
             });
-
-            setSuccess('Usuario registrado exitosamente');
+            setAlertMessage('Usuario registrado exitosamente.');
+            setAlertType('success');
+            setShowAlert(true);
             setName('');
             setEmail('');
             setPassword('');
@@ -36,15 +41,20 @@ const Register = ({ onRegisterSuccess }) => {
             }
 
             // Cerrar el modal de registro
-            const modalElement = document.getElementById('registerModal');
-            if (modalElement) {
-                const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
-                if (modalInstance) {
-                    modalInstance.hide();
+            setTimeout(() => {
+                const modalElement = document.getElementById('registerModal');
+                if (modalElement) {
+                    const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
                 }
-            }
+            }, 2000)
+            
         } catch (error) {
-            setError('Error al registrar: ' + error.message);
+            setAlertMessage('Error al registrar: ' + error.message);
+            setAlertType('error');
+            setShowAlert(true);
         }
     };
 
@@ -85,10 +95,15 @@ const Register = ({ onRegisterSuccess }) => {
                         required 
                     />
                 </div>
-                {error && <div className="text-danger">{error}</div>}
-                {success && <div className="text-success">{success}</div>}
                 <button type="submit" className="btn btn-primary">Registrar</button>
             </form>
+            <Alert
+                show={showAlert}
+                onClose={handleCloseAlert}
+                message={alertMessage}
+                type={alertType}
+                title={alertType === 'success' ? '¡Éxito!' : '¡Error!'}
+            />
         </div>
     );
 };

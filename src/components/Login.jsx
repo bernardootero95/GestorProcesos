@@ -19,9 +19,11 @@ const Login = () => {
             setShowAlert(true);
             setEmail('');
             setPassword('');
+            setTimeout(() =>{
             const modalElement = document.getElementById('loginModal');
             const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
             modalInstance && modalInstance.hide();
+            }, 2000);
         } catch (error) {
             setAlertMessage('Error al iniciar sesión: ' + error.message);
             setAlertType('error');
